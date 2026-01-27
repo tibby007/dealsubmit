@@ -1,6 +1,8 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY || '')
+}
 
 const FROM_EMAIL = 'DealSubmit Pro <noreply@commercialcapitalconnect.com>'
 
@@ -14,7 +16,7 @@ export async function sendEmail({
   html: string
 }) {
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM_EMAIL,
       to,
       subject,
