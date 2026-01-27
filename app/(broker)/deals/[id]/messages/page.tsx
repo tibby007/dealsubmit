@@ -75,6 +75,11 @@ export default function MessagesPage() {
     })
 
     if (!error) {
+      fetch('/api/email/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'new_message', dealId: id, message: newMessage.trim() }),
+      })
       setNewMessage('')
       loadMessages()
     }

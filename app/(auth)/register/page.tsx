@@ -45,6 +45,16 @@ export default function RegisterPage() {
     }
 
     try {
+      const rateRes = await fetch('/api/auth/rate-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'register' }),
+      })
+      if (!rateRes.ok) {
+        const rateData = await rateRes.json()
+        throw new Error(rateData.error)
+      }
+
       // Sign up the user
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,

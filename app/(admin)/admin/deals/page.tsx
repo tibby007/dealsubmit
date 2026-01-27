@@ -44,6 +44,13 @@ export default function AdminDealsPage() {
       changed_by: user.id,
       notes: 'Status updated via pipeline',
     })
+
+    // Notify broker via email
+    fetch('/api/email/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'status_change', dealId, oldStatus, newStatus }),
+    })
   }
 
   if (loading) return <div className="text-center py-12 text-gray-500">Loading pipeline...</div>

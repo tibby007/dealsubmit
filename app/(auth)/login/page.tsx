@@ -19,6 +19,16 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
+      const rateRes = await fetch('/api/auth/rate-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login' }),
+      })
+      if (!rateRes.ok) {
+        const rateData = await rateRes.json()
+        throw new Error(rateData.error)
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -117,11 +127,16 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="text-center text-sm">
-            <span className="text-gray-600">Don&apos;t have an account? </span>
-            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-              Register here
+          <div className="flex justify-between text-sm">
+            <Link href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+              Forgot password?
             </Link>
+            <span>
+              <span className="text-gray-600">No account? </span>
+              <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+                Register
+              </Link>
+            </span>
           </div>
         </form>
       </div>

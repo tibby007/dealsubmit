@@ -12,6 +12,7 @@ import { StepDocuments } from '@/components/forms/deal-wizard/step-documents'
 import { StepBrokerWriteup } from '@/components/forms/deal-wizard/step-broker-writeup'
 import { StepReview } from '@/components/forms/deal-wizard/step-review'
 import type { DealFormData, OwnerFormData } from '@/types/forms'
+import { validateStep } from '@/lib/validation'
 
 const STEPS = [
   'Deal Type',
@@ -74,6 +75,7 @@ export default function NewDealPage() {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File[]>>({})
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
   const router = useRouter()
   const supabase = createClient()
 
@@ -81,7 +83,15 @@ export default function NewDealPage() {
     setFormData((prev) => ({ ...prev, ...updates }))
   }
 
-  const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1))
+  const next = () => {
+    const errors = validateStep(step, formData as any)
+    if (errors.length > 0) {
+      setValidationErrors(errors)
+      return
+    }
+    setValidationErrors([])
+    setStep((s) => Math.min(s + 1, STEPS.length - 1))
+  }
   const back = () => setStep((s) => Math.max(s - 1, 0))
 
   const handleSubmit = async () => {
@@ -130,12 +140,20 @@ export default function NewDealPage() {
 
       if (dealError) throw dealError
 
-      // Insert owners
-      for (let i = 0; i < formData.owners.length; i++) {
-        const owner = formData.owners[i]
-        if (!owner.first_name) continue
+      // Encrypt SSNs server-side
+      const activeOwners = formData.owners.filter((o) => o.first_name)
+      const encryptRes = await fetch('/api/deals/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ owners: activeOwners.map((o) => ({ ssn: o.ssn })) }),
+      })
+      const encryptData = await encryptRes.json()
+      if (!encryptRes.ok) throw new Error(encryptData.error || 'Failed to process SSN')
 
-        const ssnLastFour = owner.ssn ? owner.ssn.replace(/\D/g, '').slice(-4) : null
+      // Insert owners
+      for (let i = 0; i < activeOwners.length; i++) {
+        const owner = activeOwners[i]
+        const ssnInfo = encryptData.owners[i]
 
         const { error: ownerError } = await supabase.from('owners').insert({
           deal_id: deal.id,
@@ -149,7 +167,8 @@ export default function NewDealPage() {
           home_phone: owner.home_phone || null,
           cell_phone: owner.cell_phone,
           email: owner.email,
-          ssn_last_four: ssnLastFour,
+          ssn_last_four: ssnInfo.ssn_last_four,
+          ssn_encrypted: ssnInfo.ssn_encrypted,
           date_of_birth: owner.date_of_birth,
           ownership_percentage: owner.ownership_percentage,
           annual_income: owner.annual_income || null,
@@ -192,6 +211,13 @@ export default function NewDealPage() {
         notes: 'Deal submitted',
       })
 
+      // Notify admins via email
+      fetch('/api/email/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'new_deal', dealId: deal.id }),
+      })
+
       router.push(`/deals/${deal.id}`)
     } catch (err: any) {
       setError(err.message || 'Failed to submit deal')
@@ -219,6 +245,17 @@ export default function NewDealPage() {
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
           {error}
+        </div>
+      )}
+
+      {validationErrors.length > 0 && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <p className="font-medium text-sm">Please fix the following:</p>
+          <ul className="list-disc list-inside text-sm mt-1">
+            {validationErrors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
         </div>
       )}
 

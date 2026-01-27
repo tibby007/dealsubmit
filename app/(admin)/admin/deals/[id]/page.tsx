@@ -22,6 +22,9 @@ export default function AdminDealDetailPage() {
   const [message, setMessage] = useState('')
   const [newMessage, setNewMessage] = useState('')
   const [messages, setMessages] = useState<any[]>([])
+  const [requestedDocs, setRequestedDocs] = useState<string[]>([])
+  const [docRequestNote, setDocRequestNote] = useState('')
+  const [sendingDocRequest, setSendingDocRequest] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -77,6 +80,19 @@ export default function AdminDealDetailPage() {
         changed_by: user.id,
         notes: statusNote || null,
       })
+
+      // Notify broker via email
+      fetch('/api/email/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'status_change',
+          dealId: id,
+          oldStatus: deal.status,
+          newStatus,
+          note: statusNote || undefined,
+        }),
+      })
     }
 
     setStatusNote('')
@@ -99,11 +115,19 @@ export default function AdminDealDetailPage() {
     } = await supabase.auth.getUser()
     if (!user) return
 
+    const msgText = newMessage.trim()
     await supabase.from('deal_messages').insert({
       deal_id: id,
       sender_id: user.id,
-      message: newMessage.trim(),
+      message: msgText,
     })
+
+    fetch('/api/email/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'new_message', dealId: id, message: msgText }),
+    })
+
     setNewMessage('')
     loadDeal()
   }
@@ -113,6 +137,54 @@ export default function AdminDealDetailPage() {
       .from('deal-documents')
       .createSignedUrl(doc.file_path, 60)
     if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+  }
+
+  function toggleDocRequest(docType: string) {
+    setRequestedDocs((prev) =>
+      prev.includes(docType) ? prev.filter((d) => d !== docType) : [...prev, docType]
+    )
+  }
+
+  async function handleRequestDocs() {
+    if (requestedDocs.length === 0) return
+    setSendingDocRequest(true)
+
+    // Also change status to docs_needed if not already
+    if (deal.status !== 'docs_needed') {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase
+          .from('deals')
+          .update({ status: 'docs_needed', last_status_change: new Date().toISOString() })
+          .eq('id', id)
+
+        await supabase.from('status_history').insert({
+          deal_id: id,
+          old_status: deal.status,
+          new_status: 'docs_needed',
+          changed_by: user.id,
+          notes: `Documents requested: ${requestedDocs.map((d) => DOCUMENT_TYPES[d as DocumentType] || d).join(', ')}`,
+        })
+      }
+    }
+
+    // Send email notification
+    await fetch('/api/email/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'docs_requested',
+        dealId: id,
+        documentTypes: requestedDocs,
+        note: docRequestNote || undefined,
+      }),
+    })
+
+    setSendingDocRequest(false)
+    setRequestedDocs([])
+    setDocRequestNote('')
+    setMessage('Document request sent to broker')
+    loadDeal()
   }
 
   if (!deal) return <div className="text-center py-12 text-gray-500">Loading...</div>
@@ -288,6 +360,38 @@ export default function AdminDealDetailPage() {
         ) : (
           <p className="text-sm text-gray-500">No documents uploaded</p>
         )}
+      </div>
+
+      {/* Request Documents */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Request Documents from Broker</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+          {Object.entries(DOCUMENT_TYPES).map(([key, label]) => (
+            <label key={key} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={requestedDocs.includes(key)}
+                onChange={() => toggleDocRequest(key)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+        <input
+          type="text"
+          value={docRequestNote}
+          onChange={(e) => setDocRequestNote(e.target.value)}
+          placeholder="Optional note to broker..."
+          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm mb-3"
+        />
+        <button
+          onClick={handleRequestDocs}
+          disabled={requestedDocs.length === 0 || sendingDocRequest}
+          className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50"
+        >
+          {sendingDocRequest ? 'Sending...' : `Request ${requestedDocs.length} Document${requestedDocs.length !== 1 ? 's' : ''}`}
+        </button>
       </div>
 
       {/* Admin Notes */}
