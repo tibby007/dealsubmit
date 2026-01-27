@@ -31,7 +31,7 @@ export default function AdminDealsPage() {
 
     const { error } = await supabase
       .from('deals')
-      .update({ status: newStatus, last_status_change: new Date().toISOString() })
+      .update({ status: newStatus as any, last_status_change: new Date().toISOString() })
       .eq('id', dealId)
 
     if (error) throw error

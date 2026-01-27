@@ -10,6 +10,7 @@ export interface Database {
   public: {
     Tables: {
       profiles: {
+        Relationships: []
         Row: {
           id: string
           email: string
@@ -45,6 +46,7 @@ export interface Database {
         }
       }
       deals: {
+        Relationships: []
         Row: {
           id: string
           broker_id: string
@@ -143,6 +145,7 @@ export interface Database {
         }
       }
       owners: {
+        Relationships: []
         Row: {
           id: string
           deal_id: string
@@ -208,6 +211,7 @@ export interface Database {
         }
       }
       documents: {
+        Relationships: []
         Row: {
           id: string
           deal_id: string
@@ -246,6 +250,7 @@ export interface Database {
         }
       }
       deal_messages: {
+        Relationships: []
         Row: {
           id: string
           deal_id: string
@@ -272,6 +277,7 @@ export interface Database {
         }
       }
       status_history: {
+        Relationships: []
         Row: {
           id: string
           deal_id: string
@@ -301,6 +307,9 @@ export interface Database {
         }
       }
     }
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
       is_admin: {
         Args: Record<string, never>
@@ -317,6 +326,12 @@ export interface Database {
           funded: number
         }[]
       }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }

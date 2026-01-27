@@ -15,7 +15,7 @@ export default function AdminDealDetailPage() {
   const [documents, setDocuments] = useState<any[]>([])
   const [broker, setBroker] = useState<any>(null)
   const [statusHistory, setStatusHistory] = useState<any[]>([])
-  const [newStatus, setNewStatus] = useState('')
+  const [newStatus, setNewStatus] = useState<string>('')
   const [statusNote, setStatusNote] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
   const [saving, setSaving] = useState(false)
@@ -70,13 +70,13 @@ export default function AdminDealDetailPage() {
     if (newStatus !== deal.status) {
       await supabase
         .from('deals')
-        .update({ status: newStatus, last_status_change: new Date().toISOString() })
+        .update({ status: newStatus as DealStatus, last_status_change: new Date().toISOString() })
         .eq('id', id)
 
       await supabase.from('status_history').insert({
         deal_id: id,
         old_status: deal.status,
-        new_status: newStatus,
+        new_status: newStatus as DealStatus,
         changed_by: user.id,
         notes: statusNote || null,
       })
