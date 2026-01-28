@@ -70,5 +70,17 @@
 
 ## What's Left (Nice-to-Have)
 
-- Supabase Edge Functions (send-notification, handle-new-deal, handle-status-change)
 - Resend domain verification and FROM_EMAIL update in lib/email.ts
+
+## Architecture Decision: Email Notifications
+
+**Evaluated Supabase Edge Functions** but staying with current `/api/email/notify` route because:
+- Current implementation is reliable and well-tested
+- Edge Functions provide value mainly with database webhooks (future automation)
+- Simpler to debug and maintain in Next.js API routes
+- No immediate scaling need
+
+**Recommendation:** Revisit Edge Functions when:
+- Adding non-web deal creation (bulk import, external API)
+- Need guaranteed delivery independent of Next.js deployment
+- Implementing full database-triggered automation
