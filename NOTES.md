@@ -38,31 +38,19 @@
 - Rate limiting on auth and uploads
 - Supabase RLS with SECURITY DEFINER admin function
 
-## Pending SQL to Run
+## Database Migrations
 
-```sql
--- Add encrypted SSN column
-ALTER TABLE owners ADD COLUMN ssn_encrypted TEXT;
-
--- Add signed_application to document type constraint
-ALTER TABLE documents DROP CONSTRAINT IF EXISTS documents_document_type_check;
-ALTER TABLE documents ADD CONSTRAINT documents_document_type_check CHECK (
-  document_type IN (
-    'bank_statement','tax_return','quote_invoice','voided_check',
-    'credit_card_statements','profit_loss','balance_sheet','debt_schedule',
-    'property_docs','rent_roll','environmental_report','equipment_photos',
-    'signed_application','other'
-  )
-);
-```
+✅ Completed (2026-01-28):
+- Added `ssn_encrypted` column to owners table
+- Added `signed_application` to document types constraint
 
 ## Environment Variables (Vercel)
 
+✅ All configured:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
 - `RESEND_API_KEY`
-- `ENCRYPTION_KEY` (any random string for AES-256 SSN encryption)
+- `ENCRYPTION_KEY` (random string for AES-256 SSN encryption)
 - `NEXT_PUBLIC_SITE_URL` (production URL for email links)
 
 ## Deployment
