@@ -71,5 +71,4 @@
 ## What's Left (Nice-to-Have)
 
 - Supabase Edge Functions (send-notification, handle-new-deal, handle-status-change)
-- React Hook Form integration (wizard currently uses raw useState)
 - Resend domain verification and FROM_EMAIL update in lib/email.ts
