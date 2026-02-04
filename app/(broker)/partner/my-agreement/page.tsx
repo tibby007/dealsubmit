@@ -91,21 +91,48 @@ export default async function MyAgreementPage() {
         </dl>
       </div>
 
-      {/* Signature */}
+      {/* Signatures */}
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Your Signature</h3>
-        {agreement.partner_signature_url ? (
-          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={agreement.partner_signature_url}
-              alt="Partner Signature"
-              className="max-w-full h-auto max-h-32"
-            />
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Signatures</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Partner Signature */}
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-2">Partner Signature</p>
+            {agreement.partner_signature_url ? (
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={agreement.partner_signature_url}
+                  alt="Partner Signature"
+                  className="max-w-full h-auto max-h-24"
+                />
+              </div>
+            ) : (
+              <p className="text-gray-500">No signature on file</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">{profile?.full_name}</p>
           </div>
-        ) : (
-          <p className="text-gray-500">No signature on file</p>
-        )}
+
+          {/* CCC Signature */}
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-2">Commercial Capital Connect</p>
+            {agreement.ccc_signature_url ? (
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={agreement.ccc_signature_url}
+                  alt="CCC Signature"
+                  className="max-w-full h-auto max-h-24"
+                />
+              </div>
+            ) : (
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 text-center text-gray-400">
+                Pending countersignature
+              </div>
+            )}
+            <p className="text-xs text-gray-500 mt-1">Cheryl Tibbs, CEO</p>
+          </div>
+        </div>
       </div>
 
       {/* Agreement Terms Summary */}

@@ -86,7 +86,7 @@ export default function PartnerAgreementPage() {
           contact_name: profile?.full_name || '',
           compensation_percentage: COMMISSION_PERCENTAGE,
           partner_signature_url: signature,
-          ccc_signature_url: '', // CCC countersigns later
+          ccc_signature_url: '/ccc-signature.png',
           ip_address: null,
         })
 
