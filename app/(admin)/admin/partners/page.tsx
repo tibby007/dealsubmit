@@ -13,12 +13,14 @@ export default async function PartnersPage() {
     .order('created_at', { ascending: false })
 
   // Get application IDs and fetch applications
-  const applicationIds = partners?.map(p => p.application_id).filter(Boolean) || []
+  const applicationIds = (partners?.map(p => p.application_id).filter((id): id is string => id !== null)) || []
 
-  const { data: applications } = await supabase
-    .from('partner_applications')
-    .select('*')
-    .in('id', applicationIds)
+  const { data: applications } = applicationIds.length > 0
+    ? await supabase
+        .from('partner_applications')
+        .select('*')
+        .in('id', applicationIds)
+    : { data: [] }
 
   // Create a map of application_id to application
   const applicationMap = new Map(applications?.map(a => [a.id, a]) || [])

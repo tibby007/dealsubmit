@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import OnboardingChecklist from '@/components/onboarding-checklist'
+import { ONBOARDING_STATUSES } from '@/lib/constants'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -17,7 +19,28 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
-  // Get deal statistics
+  if (!profile) return null
+
+  const isOnboardingComplete = profile.onboarding_status === 'complete'
+
+  // If onboarding not complete, show checklist instead of dashboard
+  if (!isOnboardingComplete) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Partner Dashboard</h2>
+          <p className="text-gray-600 mt-1">Complete your onboarding to start submitting deals</p>
+        </div>
+
+        <OnboardingChecklist
+          status={profile.onboarding_status as keyof typeof ONBOARDING_STATUSES}
+          contactName={profile.full_name}
+        />
+      </div>
+    )
+  }
+
+  // Get deal statistics for complete onboarding
   const { data: deals } = await supabase
     .from('deals')
     .select('id, status, legal_business_name, funding_amount, deal_type, submitted_at')
