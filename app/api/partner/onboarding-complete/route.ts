@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
           <li>✓ Partner agreement signed</li>
           <li>✓ W9 uploaded</li>
         </ul>
-        <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/partners">View Partners</a></p>
+        <p><a href="${process.env.NEXT_PUBLIC_SITE_URL}/admin/partners">View Partners</a></p>
       `,
     })
 
@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
         </ul>
 
         <p style="margin: 24px 0;">
-          <a href="${process.env.NEXT_PUBLIC_APP_URL}/deals/new" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-right: 12px;">Submit Your First Deal</a>
-          <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Go to Dashboard</a>
+          <a href="${process.env.NEXT_PUBLIC_SITE_URL}/deals/new" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-right: 12px;">Submit Your First Deal</a>
+          <a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Go to Dashboard</a>
         </p>
 
         <h3>Commission Structure Reminder</h3>
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         <h3>Quick Tips for Success:</h3>
         <ul>
           <li>Submit complete applications with all required documents</li>
-          <li>Review our <a href="${process.env.NEXT_PUBLIC_APP_URL}/partner/guidelines/underwriting">Underwriting Guidelines</a> before submitting</li>
+          <li>Review our <a href="${process.env.NEXT_PUBLIC_SITE_URL}/partner/guidelines/underwriting">Underwriting Guidelines</a> before submitting</li>
           <li>Reach out early if you're unsure about a deal - we're happy to pre-qualify</li>
         </ul>
 

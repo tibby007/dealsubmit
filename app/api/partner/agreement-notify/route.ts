@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
         <p><strong>Date:</strong> ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })}</p>
         <hr>
         <p>Next step: Partner will upload their W9 form.</p>
-        <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/partners">View Partners</a></p>
+        <p><a href="${process.env.NEXT_PUBLIC_SITE_URL}/admin/partners">View Partners</a></p>
       `,
     })
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         <p>We've received your signed partner agreement. You're almost done!</p>
         <h3>Next Step: Upload Your W9</h3>
         <p>Please upload your completed W-9 form to continue your onboarding:</p>
-        <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/partner/documents/w9" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Upload W9</a></p>
+        <p><a href="${process.env.NEXT_PUBLIC_SITE_URL}/partner/documents/w9" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Upload W9</a></p>
         <p>Need a blank W-9 form? <a href="https://www.irs.gov/pub/irs-pdf/fw9.pdf">Download from IRS</a></p>
         <hr>
         <p style="color: #666; font-size: 14px;">
