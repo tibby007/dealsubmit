@@ -49,6 +49,7 @@ export default async function PartnersPage() {
 
   // Filter to only approved applications
   const approvedPartners = partners?.filter(p => {
+    if (!p.application_id) return false
     const app = applicationMap.get(p.application_id)
     return app?.status === 'approved'
   }) || []
