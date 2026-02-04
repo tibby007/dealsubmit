@@ -17,6 +17,12 @@ export default function Home() {
           </div>
           <div className="flex items-center space-x-4">
             <Link
+              href="/partner"
+              className="text-gray-700 hover:text-gray-900 font-medium text-sm"
+            >
+              Become a Partner
+            </Link>
+            <Link
               href="/login"
               className="text-gray-700 hover:text-gray-900 font-medium text-sm"
             >
@@ -200,6 +206,9 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center space-x-6 text-sm text-gray-600">
+              <Link href="/partner" className="hover:text-gray-900">
+                Become a Partner
+              </Link>
               <Link href="/login" className="hover:text-gray-900">
                 Sign In
               </Link>
