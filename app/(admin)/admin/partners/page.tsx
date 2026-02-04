@@ -99,7 +99,7 @@ export default async function PartnersPage() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {approvedPartners.map((partner) => {
-                const application = applicationMap.get(partner.application_id)
+                const application = partner.application_id ? applicationMap.get(partner.application_id) : null
                 const hasAgreement = agreementUserIds.has(partner.id)
                 const hasW9 = w9UserIds.has(partner.id)
                 const hasBank = bankUserIds.has(partner.id)
