@@ -11,6 +11,8 @@ const navigation = [
   { name: 'Dashboard', href: '/admin' },
   { name: 'All Deals', href: '/admin/deals' },
   { name: 'Brokers', href: '/admin/brokers' },
+  { name: 'Partner Applications', href: '/admin/partner-applications' },
+  { name: 'Partners', href: '/admin/partners' },
 ]
 
 export default function AdminSidebar({ profile }: { profile: Profile }) {
@@ -27,7 +29,7 @@ export default function AdminSidebar({ profile }: { profile: Profile }) {
             <li>
               <ul role="list" className="-mx-2 space-y-1">
                 {navigation.map((item) => {
-                  const isActive = pathname === item.href
+                  const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
                   return (
                     <li key={item.name}>
                       <Link
