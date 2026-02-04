@@ -104,6 +104,22 @@ export default function PartnerAgreementPage() {
         throw updateError
       }
 
+      // Send notification
+      try {
+        await fetch('/api/partner/agreement-notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            partnerName: profile?.full_name,
+            companyName: profile?.company_name,
+            partnerEmail: profile?.email,
+          }),
+        })
+      } catch (notifyError) {
+        console.error('Failed to send notification:', notifyError)
+        // Don't block flow if notification fails
+      }
+
       // Redirect to W9 upload
       router.push('/partner/documents/w9')
     } catch (err) {

@@ -14,6 +14,7 @@ export default function W9UploadPage() {
   const [existingW9, setExistingW9] = useState<{ id: string; file_name: string; uploaded_at: string } | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [onboardingStatus, setOnboardingStatus] = useState<string | null>(null)
+  const [profileInfo, setProfileInfo] = useState<{ full_name: string; company_name: string | null; email: string } | null>(null)
 
   useEffect(() => {
     async function checkStatus() {
@@ -28,12 +29,17 @@ export default function W9UploadPage() {
       // Get profile status
       const { data: profile } = await supabase
         .from('profiles')
-        .select('onboarding_status')
+        .select('onboarding_status, full_name, company_name, email')
         .eq('id', user.id)
         .single()
 
       if (profile) {
         setOnboardingStatus(profile.onboarding_status)
+        setProfileInfo({
+          full_name: profile.full_name,
+          company_name: profile.company_name,
+          email: profile.email,
+        })
       }
 
       // Check for existing W9
@@ -136,9 +142,25 @@ export default function W9UploadPage() {
         if (updateError) {
           throw updateError
         }
+
+        // Send onboarding complete notification
+        try {
+          await fetch('/api/partner/onboarding-complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              partnerName: profileInfo?.full_name,
+              companyName: profileInfo?.company_name,
+              partnerEmail: profileInfo?.email,
+            }),
+          })
+        } catch (notifyError) {
+          console.error('Failed to send notification:', notifyError)
+          // Don't block flow if notification fails
+        }
       }
 
-      // Redirect to dashboard or bank info
+      // Redirect to dashboard or documents
       if (onboardingStatus === 'w9_pending') {
         router.push('/dashboard')
       } else {
