@@ -71,13 +71,21 @@ export default function PartnerApplicationDetailPage() {
         .single()
 
       if (profiles) {
-        await supabase
+        const { error: profileError } = await supabase
           .from('profiles')
           .update({
             onboarding_status: 'agreement_pending',
             is_approved: true,
           })
           .eq('id', profiles.id)
+
+        if (profileError) {
+          console.error('Error updating profile:', profileError)
+          throw new Error('Failed to update partner profile. Check RLS policies.')
+        }
+      } else {
+        console.error('No profile found for application:', applicationId)
+        throw new Error('Partner profile not found')
       }
 
       // 3. Send approval email
