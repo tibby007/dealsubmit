@@ -11,18 +11,26 @@ export default async function PartnerDetailPage({
   const { id } = await params
   const supabase = await createClient()
 
-  // Get partner profile with application
+  // Get partner profile
   const { data: partner, error } = await supabase
     .from('profiles')
-    .select(`
-      *,
-      partner_applications!application_id (*)
-    `)
+    .select('*')
     .eq('id', id)
     .single()
 
   if (error || !partner) {
     redirect('/admin/partners')
+  }
+
+  // Get partner application if exists
+  let application = null
+  if (partner.application_id) {
+    const { data: appData } = await supabase
+      .from('partner_applications')
+      .select('*')
+      .eq('id', partner.application_id)
+      .single()
+    application = appData
   }
 
   // Get partner agreement
@@ -45,8 +53,6 @@ export default async function PartnerDetailPage({
     .select('*')
     .eq('user_id', id)
     .single()
-
-  const application = partner.partner_applications
 
   const getOnboardingBadgeClass = (status: string) => {
     switch (status) {

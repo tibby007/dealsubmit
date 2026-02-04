@@ -8,17 +8,20 @@ export default async function PartnersPage() {
   // Get all profiles that have an application_id (meaning they came through partner application)
   const { data: partners } = await supabase
     .from('profiles')
-    .select(`
-      *,
-      partner_applications!application_id (
-        company_name,
-        contact_name,
-        status,
-        created_at
-      )
-    `)
+    .select('*')
     .not('application_id', 'is', null)
     .order('created_at', { ascending: false })
+
+  // Get application IDs and fetch applications
+  const applicationIds = partners?.map(p => p.application_id).filter(Boolean) || []
+
+  const { data: applications } = await supabase
+    .from('partner_applications')
+    .select('*')
+    .in('id', applicationIds)
+
+  // Create a map of application_id to application
+  const applicationMap = new Map(applications?.map(a => [a.id, a]) || [])
 
   // Get partner agreements and documents for each partner
   const partnerIds = partners?.map(p => p.id) || []
@@ -43,9 +46,10 @@ export default async function PartnersPage() {
   const bankUserIds = new Set(bankInfo?.map(b => b.user_id) || [])
 
   // Filter to only approved applications
-  const approvedPartners = partners?.filter(
-    p => p.partner_applications?.status === 'approved'
-  ) || []
+  const approvedPartners = partners?.filter(p => {
+    const app = applicationMap.get(p.application_id)
+    return app?.status === 'approved'
+  }) || []
 
   const getOnboardingBadgeClass = (status: string) => {
     switch (status) {
@@ -92,6 +96,7 @@ export default async function PartnersPage() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {approvedPartners.map((partner) => {
+                const application = applicationMap.get(partner.application_id)
                 const hasAgreement = agreementUserIds.has(partner.id)
                 const hasW9 = w9UserIds.has(partner.id)
                 const hasBank = bankUserIds.has(partner.id)
@@ -103,11 +108,11 @@ export default async function PartnersPage() {
                         href={`/admin/partners/${partner.id}`}
                         className="text-blue-600 hover:text-blue-800 font-medium"
                       >
-                        {partner.partner_applications?.company_name || partner.company_name || '—'}
+                        {application?.company_name || partner.company_name || '—'}
                       </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {partner.partner_applications?.contact_name || partner.full_name}
+                      {application?.contact_name || partner.full_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {partner.email}
