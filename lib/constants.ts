@@ -81,3 +81,63 @@ export const USER_ROLES = {
 } as const
 
 export type UserRole = keyof typeof USER_ROLES
+
+// Onboarding Statuses
+export const ONBOARDING_STATUSES = {
+  pending_approval: 'Pending Approval',
+  approved: 'Approved',
+  agreement_pending: 'Agreement Pending',
+  w9_pending: 'W9 Pending',
+  complete: 'Complete',
+} as const
+
+export type OnboardingStatus = keyof typeof ONBOARDING_STATUSES
+
+// Application Statuses
+export const APPLICATION_STATUSES = {
+  pending: 'Pending',
+  approved: 'Approved',
+  declined: 'Declined',
+} as const
+
+export type ApplicationStatus = keyof typeof APPLICATION_STATUSES
+
+// Partner Document Types
+export const PARTNER_DOCUMENT_TYPES = {
+  w9: 'W9',
+  voided_check: 'Voided Check',
+  direct_deposit_form: 'Direct Deposit Form',
+} as const
+
+export type PartnerDocumentType = keyof typeof PARTNER_DOCUMENT_TYPES
+
+// How Heard About Us Options
+export const HOW_HEARD_OPTIONS = [
+  'Referral',
+  'LinkedIn',
+  'Google',
+  'Industry Event',
+  'Other',
+] as const
+
+export type HowHeardOption = typeof HOW_HEARD_OPTIONS[number]
+
+// Typical Deal Types (for partner application)
+export const TYPICAL_DEAL_TYPES = [
+  'Equipment Finance',
+  'Working Capital/MCA',
+  'Bank Lines of Credit',
+  'Term Loans',
+] as const
+
+export type TypicalDealType = typeof TYPICAL_DEAL_TYPES[number]
+
+// Monthly Volume Options
+export const MONTHLY_VOLUME_OPTIONS = [
+  '1-5 deals',
+  '6-10 deals',
+  '11-20 deals',
+  '20+ deals',
+] as const
+
+export type MonthlyVolumeOption = typeof MONTHLY_VOLUME_OPTIONS[number]

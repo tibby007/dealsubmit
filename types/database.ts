@@ -6,6 +6,15 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+// Onboarding status type
+export type OnboardingStatus = 'pending_approval' | 'approved' | 'agreement_pending' | 'w9_pending' | 'complete'
+
+// Application status type
+export type ApplicationStatus = 'pending' | 'approved' | 'declined'
+
+// Partner document type
+export type PartnerDocumentType = 'w9' | 'voided_check' | 'direct_deposit_form'
+
 export interface Database {
   public: {
     Tables: {
@@ -19,6 +28,8 @@ export interface Database {
           phone: string | null
           role: 'admin' | 'broker'
           is_approved: boolean
+          onboarding_status: OnboardingStatus
+          application_id: string | null
           created_at: string
           updated_at: string
         }
@@ -30,6 +41,8 @@ export interface Database {
           phone?: string | null
           role?: 'admin' | 'broker'
           is_approved?: boolean
+          onboarding_status?: OnboardingStatus
+          application_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -41,6 +54,194 @@ export interface Database {
           phone?: string | null
           role?: 'admin' | 'broker'
           is_approved?: boolean
+          onboarding_status?: OnboardingStatus
+          application_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      partner_applications: {
+        Relationships: []
+        Row: {
+          id: string
+          company_name: string
+          address: string
+          city: string
+          state: string
+          zip: string
+          contact_name: string
+          position: string | null
+          mobile_phone: string
+          email: string
+          additional_phone: string | null
+          how_heard_about_us: string | null
+          typical_deal_types: string[]
+          estimated_monthly_volume: string | null
+          status: ApplicationStatus
+          reviewed_by: string | null
+          reviewed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          company_name: string
+          address: string
+          city: string
+          state: string
+          zip: string
+          contact_name: string
+          position?: string | null
+          mobile_phone: string
+          email: string
+          additional_phone?: string | null
+          how_heard_about_us?: string | null
+          typical_deal_types?: string[]
+          estimated_monthly_volume?: string | null
+          status?: ApplicationStatus
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          company_name?: string
+          address?: string
+          city?: string
+          state?: string
+          zip?: string
+          contact_name?: string
+          position?: string | null
+          mobile_phone?: string
+          email?: string
+          additional_phone?: string | null
+          how_heard_about_us?: string | null
+          typical_deal_types?: string[]
+          estimated_monthly_volume?: string | null
+          status?: ApplicationStatus
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      partner_agreements: {
+        Relationships: []
+        Row: {
+          id: string
+          user_id: string
+          agreement_version: string
+          company_name: string
+          contact_name: string
+          partner_signature_url: string
+          ccc_signature_url: string
+          compensation_percentage: number
+          signed_at: string
+          ip_address: string | null
+          user_agent: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          agreement_version?: string
+          company_name: string
+          contact_name: string
+          partner_signature_url: string
+          ccc_signature_url: string
+          compensation_percentage?: number
+          signed_at?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          agreement_version?: string
+          company_name?: string
+          contact_name?: string
+          partner_signature_url?: string
+          ccc_signature_url?: string
+          compensation_percentage?: number
+          signed_at?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+      }
+      partner_documents: {
+        Relationships: []
+        Row: {
+          id: string
+          user_id: string
+          document_type: PartnerDocumentType
+          file_url: string
+          file_name: string
+          uploaded_at: string
+          verified: boolean
+          verified_by: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          document_type: PartnerDocumentType
+          file_url: string
+          file_name: string
+          uploaded_at?: string
+          verified?: boolean
+          verified_by?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          document_type?: PartnerDocumentType
+          file_url?: string
+          file_name?: string
+          uploaded_at?: string
+          verified?: boolean
+          verified_by?: string | null
+          verified_at?: string | null
+        }
+      }
+      partner_bank_info: {
+        Relationships: []
+        Row: {
+          id: string
+          user_id: string
+          account_name: string | null
+          bank_name: string | null
+          routing_number: string | null
+          account_number: string | null
+          verification_document_id: string | null
+          verified: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          account_name?: string | null
+          bank_name?: string | null
+          routing_number?: string | null
+          account_number?: string | null
+          verification_document_id?: string | null
+          verified?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          account_name?: string | null
+          bank_name?: string | null
+          routing_number?: string | null
+          account_number?: string | null
+          verification_document_id?: string | null
+          verified?: boolean
           created_at?: string
           updated_at?: string
         }
