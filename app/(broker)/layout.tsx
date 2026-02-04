@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import BrokerSidebar from '@/components/layout/broker-sidebar'
 import Header from '@/components/layout/header'
+import PendingApproval from '@/components/pending-approval'
 
 export default async function BrokerLayout({
   children,
@@ -31,25 +32,7 @@ export default async function BrokerLayout({
 
   // Check if broker is approved
   if (profile.role === 'broker' && !profile.is_approved) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white shadow-md rounded-lg p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Account Pending Approval</h2>
-          <p className="text-gray-600 mb-4">
-            Your broker account is currently pending approval from an administrator.
-            You will receive an email notification once your account has been approved.
-          </p>
-          <form action="/api/auth/signout" method="post">
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
-            >
-              Sign Out
-            </button>
-          </form>
-        </div>
-      </div>
-    )
+    return <PendingApproval />
   }
 
   // Redirect admin to admin panel
