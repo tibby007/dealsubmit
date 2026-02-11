@@ -132,18 +132,18 @@ export default function W9UploadPage() {
         throw insertError
       }
 
-      // Update profile status to complete if this is during onboarding
+      // Update profile status to pending_approval if this is during onboarding
       if (onboardingStatus === 'w9_pending') {
         const { error: updateError } = await supabase
           .from('profiles')
-          .update({ onboarding_status: 'complete' })
+          .update({ onboarding_status: 'pending_approval' })
           .eq('id', user.id)
 
         if (updateError) {
           throw updateError
         }
 
-        // Send onboarding complete notification
+        // Notify admin that partner has completed all steps and is ready for review
         try {
           await fetch('/api/partner/onboarding-complete', {
             method: 'POST',
@@ -156,7 +156,6 @@ export default function W9UploadPage() {
           })
         } catch (notifyError) {
           console.error('Failed to send notification:', notifyError)
-          // Don't block flow if notification fails
         }
       }
 

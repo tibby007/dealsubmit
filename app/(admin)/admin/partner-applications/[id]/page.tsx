@@ -74,7 +74,7 @@ export default function PartnerApplicationDetailPage() {
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
-            onboarding_status: 'agreement_pending',
+            onboarding_status: 'complete',
             is_approved: true,
           })
           .eq('id', profiles.id)

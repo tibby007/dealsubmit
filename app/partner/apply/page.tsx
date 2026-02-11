@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -29,16 +29,49 @@ export default function PartnerApplicationPage() {
     how_heard_about_us: '',
     typical_deal_types: [] as string[],
     estimated_monthly_volume: '',
-    // Account
+    // Account (only for new users)
     password: '',
     confirm_password: '',
   })
 
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [pageLoading, setPageLoading] = useState(true)
+  const [existingUser, setExistingUser] = useState<{ id: string; email: string } | null>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  // Check if user is already logged in (cohort member coming from register)
+  useEffect(() => {
+    async function checkAuth() {
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (user) {
+        setExistingUser({ id: user.id, email: user.email || '' })
+
+        // Pre-fill from profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, company_name, phone, email')
+          .eq('id', user.id)
+          .single()
+
+        if (profile) {
+          setFormData((prev) => ({
+            ...prev,
+            contact_name: profile.full_name || '',
+            company_name: profile.company_name || '',
+            mobile_phone: profile.phone || '',
+            email: profile.email || user.email || '',
+          }))
+        }
+      }
+
+      setPageLoading(false)
+    }
+
+    checkAuth()
+  }, [supabase])
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -57,7 +90,6 @@ export default function PartnerApplicationPage() {
   }
 
   const validateForm = (): string | null => {
-    // Required fields
     if (!formData.company_name.trim()) return 'Company name is required'
     if (!formData.address.trim()) return 'Address is required'
     if (!formData.city.trim()) return 'City is required'
@@ -69,11 +101,15 @@ export default function PartnerApplicationPage() {
     if (!formData.email.trim()) return 'Email is required'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
       return 'Enter a valid email address'
-    if (!formData.password) return 'Password is required'
-    if (formData.password.length < 8)
-      return 'Password must be at least 8 characters'
-    if (formData.password !== formData.confirm_password)
-      return 'Passwords do not match'
+
+    // Only validate password for new users
+    if (!existingUser) {
+      if (!formData.password) return 'Password is required'
+      if (formData.password.length < 8)
+        return 'Password must be at least 8 characters'
+      if (formData.password !== formData.confirm_password)
+        return 'Passwords do not match'
+    }
 
     return null
   }
@@ -91,35 +127,44 @@ export default function PartnerApplicationPage() {
     }
 
     try {
-      // 1. Create the auth user
-      const { data: authData, error: signUpError } = await supabase.auth.signUp(
-        {
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              full_name: formData.contact_name,
-              company_name: formData.company_name,
-              phone: formData.mobile_phone,
+      let userId: string
+
+      if (existingUser) {
+        // Already logged in (cohort member) — skip account creation
+        userId = existingUser.id
+      } else {
+        // New user — create auth account
+        const { data: authData, error: signUpError } = await supabase.auth.signUp(
+          {
+            email: formData.email,
+            password: formData.password,
+            options: {
+              data: {
+                full_name: formData.contact_name,
+                company_name: formData.company_name,
+                phone: formData.mobile_phone,
+              },
             },
-          },
-        }
-      )
+          }
+        )
 
-      if (signUpError) {
-        if (signUpError.message.includes('already registered')) {
-          throw new Error(
-            'This email is already registered. Please sign in or use a different email.'
-          )
+        if (signUpError) {
+          if (signUpError.message.includes('already registered')) {
+            throw new Error(
+              'This email is already registered. Please sign in or use a different email.'
+            )
+          }
+          throw signUpError
         }
-        throw signUpError
+
+        if (!authData.user) {
+          throw new Error('Failed to create account')
+        }
+
+        userId = authData.user.id
       }
 
-      if (!authData.user) {
-        throw new Error('Failed to create account')
-      }
-
-      // 2. Create the partner application
+      // Create the partner application
       const { data: applicationData, error: applicationError } = await supabase
         .from('partner_applications')
         .insert({
@@ -143,21 +188,21 @@ export default function PartnerApplicationPage() {
 
       if (applicationError) throw applicationError
 
-      // 3. Update the profile with onboarding status and application link
+      // Update the profile — advance to agreement step
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           full_name: formData.contact_name,
           company_name: formData.company_name,
           phone: formData.mobile_phone,
-          onboarding_status: 'pending_approval',
+          onboarding_status: 'agreement_pending',
           application_id: applicationData.id,
         })
-        .eq('id', authData.user.id)
+        .eq('id', userId)
 
       if (profileError) throw profileError
 
-      // 4. Send notification email to admin (via API route)
+      // Send notification email to admin
       try {
         await fetch('/api/partner/application-notify', {
           method: 'POST',
@@ -173,12 +218,11 @@ export default function PartnerApplicationPage() {
           }),
         })
       } catch {
-        // Don't fail the submission if email fails
         console.error('Failed to send admin notification')
       }
 
-      // 5. Show success
-      setSubmitted(true)
+      // Redirect straight to the partner agreement
+      router.push('/partner/agreement')
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : 'Failed to submit application'
@@ -188,43 +232,10 @@ export default function PartnerApplicationPage() {
     }
   }
 
-  if (submitted) {
+  if (pageLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg
-              className="w-8 h-8 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Application Submitted!
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Thank you for your interest in partnering with Commercial Capital
-            Connect. We&apos;ll review your application and get back to you
-            within 24-48 hours.
-          </p>
-          <p className="text-sm text-gray-500 mb-8">
-            Check your email for a confirmation message.
-          </p>
-          <Link
-            href="/login"
-            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
-          >
-            Go to Login
-          </Link>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
   }
@@ -260,6 +271,12 @@ export default function PartnerApplicationPage() {
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
               {error}
+            </div>
+          )}
+
+          {existingUser && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg text-sm">
+              You&apos;re logged in as <strong>{existingUser.email}</strong>. Complete the application below to continue your onboarding.
             </div>
           )}
 
@@ -465,7 +482,8 @@ export default function PartnerApplicationPage() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  readOnly={!!existingUser}
+                  className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${existingUser ? 'bg-gray-50 text-gray-500' : ''}`}
                 />
               </div>
             </div>
@@ -546,53 +564,55 @@ export default function PartnerApplicationPage() {
             </div>
           </div>
 
-          {/* Create Your Account */}
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">
-              Create Your Account
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Password <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  minLength={8}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Minimum 8 characters
-                </p>
-              </div>
+          {/* Create Your Account — only for new users */}
+          {!existingUser && (
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">
+                Create Your Account
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Password <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    minLength={8}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Minimum 8 characters
+                  </p>
+                </div>
 
-              <div>
-                <label
-                  htmlFor="confirm_password"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Confirm Password <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  id="confirm_password"
-                  name="confirm_password"
-                  value={formData.confirm_password}
-                  onChange={handleChange}
-                  required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
+                <div>
+                  <label
+                    htmlFor="confirm_password"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Confirm Password <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    id="confirm_password"
+                    name="confirm_password"
+                    value={formData.confirm_password}
+                    onChange={handleChange}
+                    required
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Submit */}
           <div className="pt-4">
@@ -605,15 +625,17 @@ export default function PartnerApplicationPage() {
             </button>
           </div>
 
-          <p className="text-center text-sm text-gray-500">
-            Already have an account?{' '}
-            <Link
-              href="/login"
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              Sign in here
-            </Link>
-          </p>
+          {!existingUser && (
+            <p className="text-center text-sm text-gray-500">
+              Already have an account?{' '}
+              <Link
+                href="/login"
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                Sign in here
+              </Link>
+            </p>
+          )}
         </form>
       </div>
     </div>

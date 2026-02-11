@@ -44,13 +44,18 @@ export default function AdminBrokerDetailPage() {
     if (!broker) return
     setSaving(true)
 
+    const newApproved = !broker.is_approved
+
     await supabase
       .from('profiles')
-      .update({ is_approved: !broker.is_approved })
+      .update({
+        is_approved: newApproved,
+        onboarding_status: newApproved ? 'agreement_pending' : 'pending_approval',
+      })
       .eq('id', id)
 
-    setBroker({ ...broker, is_approved: !broker.is_approved })
-    setMessage(broker.is_approved ? 'Broker access revoked' : 'Broker approved')
+    setBroker({ ...broker, is_approved: newApproved, onboarding_status: newApproved ? 'agreement_pending' : 'pending_approval' })
+    setMessage(newApproved ? 'Broker approved — they can now sign the partner agreement' : 'Broker access revoked')
     setSaving(false)
   }
 

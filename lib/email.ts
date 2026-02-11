@@ -4,7 +4,7 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY || '')
 }
 
-const FROM_EMAIL = 'DealSubmit Pro <noreply@commercialcapitalconnect.com>'
+const FROM_EMAIL = 'DealSubmit Pro <noreply@commcapconnect.com>'
 
 export async function sendEmail({
   to,

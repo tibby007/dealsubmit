@@ -78,14 +78,14 @@ export default function RegisterPage() {
             full_name: formData.fullName,
             company_name: formData.companyName,
             phone: formData.phone,
+            onboarding_status: 'application_pending',
           })
           .eq('id', data.user.id)
 
         if (profileError) throw profileError
 
-        // Show success message
-        alert('Registration successful! Your account is pending approval. You will be notified once an admin approves your account.')
-        router.push('/login')
+        // Redirect to complete the partner application
+        router.push('/partner/apply')
       }
     } catch (err: any) {
       setError(err.message || 'Failed to register')

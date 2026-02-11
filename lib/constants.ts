@@ -84,6 +84,7 @@ export type UserRole = keyof typeof USER_ROLES
 
 // Onboarding Statuses
 export const ONBOARDING_STATUSES = {
+  application_pending: 'Application Pending',
   pending_approval: 'Pending Approval',
   approved: 'Approved',
   agreement_pending: 'Agreement Pending',

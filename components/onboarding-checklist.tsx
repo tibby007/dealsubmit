@@ -8,21 +8,33 @@ interface OnboardingChecklistProps {
   contactName: string
 }
 
+const STATUS_ORDER = [
+  'application_pending',
+  'agreement_pending',
+  'w9_pending',
+  'pending_approval',
+  'complete',
+] as const
+
+function isAtOrPast(current: OnboardingStatus, target: OnboardingStatus): boolean {
+  return STATUS_ORDER.indexOf(current) >= STATUS_ORDER.indexOf(target)
+}
+
 export default function OnboardingChecklist({ status, contactName }: OnboardingChecklistProps) {
   const steps = [
     {
       id: 'application',
-      name: 'Application Approved',
-      description: 'Your partner application has been reviewed',
-      completed: status !== 'pending_approval',
-      active: status === 'pending_approval',
-      href: null,
+      name: 'Complete Application',
+      description: 'Fill out your partner application',
+      completed: isAtOrPast(status, 'agreement_pending'),
+      active: status === 'application_pending',
+      href: '/partner/apply',
     },
     {
       id: 'agreement',
       name: 'Sign Partner Agreement',
       description: 'Review and sign the partner agreement',
-      completed: status === 'w9_pending' || status === 'complete',
+      completed: isAtOrPast(status, 'w9_pending'),
       active: status === 'agreement_pending',
       href: '/partner/agreement',
     },
@@ -30,35 +42,19 @@ export default function OnboardingChecklist({ status, contactName }: OnboardingC
       id: 'w9',
       name: 'Upload W9',
       description: 'Upload your W9 for tax purposes',
-      completed: status === 'complete',
+      completed: isAtOrPast(status, 'pending_approval'),
       active: status === 'w9_pending',
       href: '/partner/documents/w9',
     },
     {
-      id: 'access',
-      name: 'Access Deal Submission',
-      description: 'Start submitting deals',
+      id: 'approval',
+      name: 'Final Review',
+      description: 'Your application is being reviewed by our team',
       completed: status === 'complete',
-      active: false,
-      href: status === 'complete' ? '/deals/new' : null,
+      active: status === 'pending_approval',
+      href: null,
     },
   ]
-
-  if (status === 'pending_approval') {
-    return (
-      <div className="bg-white shadow rounded-lg p-8 text-center">
-        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Application Under Review</h2>
-        <p className="text-gray-600 max-w-md mx-auto">
-          Your application is being reviewed by our team. We&apos;ll notify you within 24-48 hours once it&apos;s been approved.
-        </p>
-      </div>
-    )
-  }
 
   return (
     <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -141,6 +137,19 @@ export default function OnboardingChecklist({ status, contactName }: OnboardingC
           ))}
         </ol>
       </nav>
+
+      {status === 'pending_approval' && (
+        <div className="px-6 py-4 bg-orange-50 border-t border-orange-100">
+          <div className="flex items-center">
+            <svg className="h-5 w-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="ml-3 text-sm font-medium text-orange-800">
+              All steps complete! We&apos;re reviewing your application and will notify you once approved.
+            </p>
+          </div>
+        </div>
+      )}
 
       {status === 'complete' && (
         <div className="px-6 py-4 bg-green-50 border-t border-green-100">

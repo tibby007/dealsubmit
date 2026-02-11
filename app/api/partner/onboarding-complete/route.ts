@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
-  const resend = new Resend(process.env.RESEND_API_KEY)
-
   try {
     const body = await request.json()
     const { partnerName, companyName, partnerEmail } = body
 
-    // Notify admin
-    await resend.emails.send({
-      from: 'DealSubmit Pro <noreply@commcapconnect.com>',
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+
+    // Notify admin that partner has completed all steps and is ready for review
+    await sendEmail({
       to: 'cheryl@commcapconnect.com',
-      subject: `Onboarding Complete: ${companyName || partnerName}`,
+      subject: `Ready for Review: ${companyName || partnerName}`,
       html: `
-        <h2>Partner Onboarding Complete</h2>
-        <p>A partner has completed all onboarding steps and is ready to submit deals.</p>
+        <h2>Partner Ready for Approval</h2>
+        <p>A partner has completed all onboarding steps and is waiting for your approval.</p>
         <hr>
         <p><strong>Partner:</strong> ${partnerName}</p>
         <p><strong>Company:</strong> ${companyName || 'N/A'}</p>
@@ -24,51 +23,34 @@ export async function POST(request: NextRequest) {
         <hr>
         <p><strong>Completed Steps:</strong></p>
         <ul>
-          <li>✓ Application approved</li>
-          <li>✓ Partner agreement signed</li>
-          <li>✓ W9 uploaded</li>
+          <li>Application submitted</li>
+          <li>Partner agreement signed</li>
+          <li>W9 uploaded</li>
         </ul>
-        <p><a href="${process.env.NEXT_PUBLIC_SITE_URL}/admin/partners">View Partners</a></p>
+        <p style="margin-top: 24px;">
+          <a href="${siteUrl}/admin/partner-applications"
+             style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Review &amp; Approve
+          </a>
+        </p>
       `,
     })
 
-    // Welcome email to partner
-    await resend.emails.send({
-      from: 'DealSubmit Pro <noreply@commcapconnect.com>',
+    // Confirmation email to partner
+    await sendEmail({
       to: partnerEmail,
-      subject: 'Welcome to DealSubmit Pro - You\'re Ready to Submit Deals!',
+      subject: 'Application Received - Commercial Capital Connect',
       html: `
-        <h2>Welcome to the Team, ${partnerName}!</h2>
-        <p>Congratulations! You've completed your partner onboarding and now have full access to DealSubmit Pro.</p>
+        <h2>Thank you, ${partnerName}!</h2>
+        <p>We've received your completed application, signed agreement, and W9.</p>
 
-        <h3>What You Can Do Now:</h3>
-        <ul>
-          <li><strong>Submit Deals:</strong> Enter new equipment financing opportunities through our portal</li>
-          <li><strong>Track Progress:</strong> Monitor the status of all your submitted deals</li>
-          <li><strong>Access Guidelines:</strong> Review underwriting and submission requirements</li>
-          <li><strong>Manage Documents:</strong> Keep your W9 and other documents up to date</li>
-        </ul>
+        <p>Our team is reviewing your application and you'll receive an email once you've been approved to start submitting deals.</p>
 
-        <p style="margin: 24px 0;">
-          <a href="${process.env.NEXT_PUBLIC_SITE_URL}/deals/new" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-right: 12px;">Submit Your First Deal</a>
-          <a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard" style="display: inline-block; background: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Go to Dashboard</a>
+        <p style="margin-top: 24px; color: #666;">
+          Questions? Contact us at <a href="mailto:info@commcapconnect.com">info@commcapconnect.com</a>.
         </p>
 
-        <h3>Commission Structure Reminder</h3>
-        <p>You'll receive 50% of the net commission on every funded deal. Payments are made via ACH within 5 business days of funding.</p>
-
-        <h3>Quick Tips for Success:</h3>
-        <ul>
-          <li>Submit complete applications with all required documents</li>
-          <li>Review our <a href="${process.env.NEXT_PUBLIC_SITE_URL}/partner/guidelines/underwriting">Underwriting Guidelines</a> before submitting</li>
-          <li>Reach out early if you're unsure about a deal - we're happy to pre-qualify</li>
-        </ul>
-
-        <hr>
-        <p style="color: #666; font-size: 14px;">
-          Questions? We're here to help! Reply to this email or contact us at deals@commcapconnect.com.
-        </p>
-        <p style="color: #666; font-size: 12px;">
+        <p style="color: #666; font-size: 12px; margin-top: 24px;">
           Commercial Capital Connect, LLC<br>
           Dallas, Texas
         </p>
