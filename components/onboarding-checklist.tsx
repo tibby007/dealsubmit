@@ -8,13 +8,14 @@ interface OnboardingChecklistProps {
   contactName: string
 }
 
-const STATUS_ORDER = [
+const STATUS_ORDER: readonly OnboardingStatus[] = [
   'application_pending',
+  'approved',
   'agreement_pending',
   'w9_pending',
   'pending_approval',
   'complete',
-] as const
+]
 
 function isAtOrPast(current: OnboardingStatus, target: OnboardingStatus): boolean {
   return STATUS_ORDER.indexOf(current) >= STATUS_ORDER.indexOf(target)

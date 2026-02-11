@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 // Onboarding status type
-export type OnboardingStatus = 'pending_approval' | 'approved' | 'agreement_pending' | 'w9_pending' | 'complete'
+export type OnboardingStatus = 'application_pending' | 'pending_approval' | 'approved' | 'agreement_pending' | 'w9_pending' | 'complete'
 
 // Application status type
 export type ApplicationStatus = 'pending' | 'approved' | 'declined'
