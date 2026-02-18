@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   emailNewDealSubmitted,
   emailStatusChanged,
@@ -11,8 +12,8 @@ import { DEAL_TYPES, DEAL_STATUSES, DOCUMENT_TYPES } from '@/lib/constants'
 import type { DealType, DealStatus, DocumentType } from '@/lib/constants'
 
 export async function POST(request: NextRequest) {
+  // User client for auth verification only
   const supabase = await createClient()
-
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -20,27 +21,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Admin client bypasses RLS so we can read all profiles, deals, etc.
+  const adminDb = createAdminClient()
+
   const body = await request.json()
   const { type } = body
 
   try {
     if (type === 'new_deal') {
       const { dealId } = body
-      const { data: deal } = await supabase
+      const { data: deal } = await adminDb
         .from('deals')
         .select('legal_business_name, deal_type, funding_amount, broker_id')
         .eq('id', dealId)
         .single()
       if (!deal) return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
 
-      const { data: broker } = await supabase
+      const { data: broker } = await adminDb
         .from('profiles')
         .select('full_name')
         .eq('id', deal.broker_id)
         .single()
 
-      // Get all admin emails
-      const { data: admins } = await supabase
+      const { data: admins } = await adminDb
         .from('profiles')
         .select('email')
         .eq('role', 'admin')
@@ -58,14 +61,14 @@ export async function POST(request: NextRequest) {
       }
     } else if (type === 'status_change') {
       const { dealId, oldStatus, newStatus, note } = body
-      const { data: deal } = await supabase
+      const { data: deal } = await adminDb
         .from('deals')
         .select('legal_business_name, broker_id')
         .eq('id', dealId)
         .single()
       if (!deal) return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
 
-      const { data: broker } = await supabase
+      const { data: broker } = await adminDb
         .from('profiles')
         .select('email')
         .eq('id', deal.broker_id)
@@ -82,22 +85,21 @@ export async function POST(request: NextRequest) {
       }
     } else if (type === 'new_message') {
       const { dealId, message } = body
-      const { data: deal } = await supabase
+      const { data: deal } = await adminDb
         .from('deals')
         .select('legal_business_name, broker_id')
         .eq('id', dealId)
         .single()
       if (!deal) return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
 
-      const { data: sender } = await supabase
+      const { data: sender } = await adminDb
         .from('profiles')
         .select('full_name, role')
         .eq('id', user.id)
         .single()
 
-      // Determine recipient: if sender is admin, notify broker; if broker, notify admins
       if (sender?.role === 'admin') {
-        const { data: broker } = await supabase
+        const { data: broker } = await adminDb
           .from('profiles')
           .select('email')
           .eq('id', deal.broker_id)
@@ -112,7 +114,7 @@ export async function POST(request: NextRequest) {
           })
         }
       } else {
-        const { data: admins } = await supabase
+        const { data: admins } = await adminDb
           .from('profiles')
           .select('email')
           .eq('role', 'admin')
@@ -130,14 +132,14 @@ export async function POST(request: NextRequest) {
       }
     } else if (type === 'docs_requested') {
       const { dealId, documentTypes, note } = body
-      const { data: deal } = await supabase
+      const { data: deal } = await adminDb
         .from('deals')
         .select('legal_business_name, broker_id')
         .eq('id', dealId)
         .single()
       if (!deal) return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
 
-      const { data: broker } = await supabase
+      const { data: broker } = await adminDb
         .from('profiles')
         .select('email')
         .eq('id', deal.broker_id)
@@ -155,20 +157,20 @@ export async function POST(request: NextRequest) {
       }
     } else if (type === 'document_uploaded') {
       const { dealId, documentTypes } = body
-      const { data: deal } = await supabase
+      const { data: deal } = await adminDb
         .from('deals')
         .select('legal_business_name, broker_id')
         .eq('id', dealId)
         .single()
       if (!deal) return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
 
-      const { data: broker } = await supabase
+      const { data: broker } = await adminDb
         .from('profiles')
         .select('full_name')
         .eq('id', deal.broker_id)
         .single()
 
-      const { data: admins } = await supabase
+      const { data: admins } = await adminDb
         .from('profiles')
         .select('email')
         .eq('role', 'admin')
