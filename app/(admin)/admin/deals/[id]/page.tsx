@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import JSZip from 'jszip'
 import { createClient } from '@/lib/supabase/client'
 import { DEAL_TYPES, DEAL_STATUSES, LEGAL_ENTITIES, DOCUMENT_TYPES } from '@/lib/constants'
 import { StatusBadge } from '@/components/deals/status-badge'
@@ -25,6 +26,8 @@ export default function AdminDealDetailPage() {
   const [requestedDocs, setRequestedDocs] = useState<string[]>([])
   const [docRequestNote, setDocRequestNote] = useState('')
   const [sendingDocRequest, setSendingDocRequest] = useState(false)
+  const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set())
+  const [downloading, setDownloading] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -137,6 +140,59 @@ export default function AdminDealDetailPage() {
       .from('deal-documents')
       .createSignedUrl(doc.file_path, 60)
     if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+  }
+
+  function toggleDocSelect(docId: string) {
+    setSelectedDocs((prev) => {
+      const next = new Set(prev)
+      if (next.has(docId)) next.delete(docId)
+      else next.add(docId)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedDocs.size === documents.length) {
+      setSelectedDocs(new Set())
+    } else {
+      setSelectedDocs(new Set(documents.map((d: any) => d.id)))
+    }
+  }
+
+  async function handleBulkDownload() {
+    const docsToDownload = documents.filter((d: any) => selectedDocs.has(d.id))
+    if (docsToDownload.length === 0) return
+
+    setDownloading(true)
+    try {
+      const zip = new JSZip()
+
+      for (const doc of docsToDownload) {
+        const { data } = await supabase.storage
+          .from('deal-documents')
+          .createSignedUrl(doc.file_path, 60)
+
+        if (data?.signedUrl) {
+          const response = await fetch(data.signedUrl)
+          const blob = await response.blob()
+          const typeLabel = DOCUMENT_TYPES[doc.document_type as DocumentType] || doc.document_type
+          zip.file(`${typeLabel} - ${doc.file_name}`, blob)
+        }
+      }
+
+      const content = await zip.generateAsync({ type: 'blob' })
+      const url = URL.createObjectURL(content)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${deal.legal_business_name.replace(/[^a-zA-Z0-9]/g, '_')}_documents.zip`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Bulk download error:', err)
+      setMessage('Failed to download documents. Please try again.')
+    } finally {
+      setDownloading(false)
+    }
   }
 
   function toggleDocRequest(docType: string) {
@@ -340,16 +396,55 @@ export default function AdminDealDetailPage() {
 
       {/* Documents */}
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Documents ({documents.length})</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium text-gray-900">Documents ({documents.length})</h3>
+          {documents.length > 0 && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={toggleSelectAll}
+                className="text-sm text-blue-600 hover:text-blue-700"
+              >
+                {selectedDocs.size === documents.length ? 'Deselect All' : 'Select All'}
+              </button>
+              {selectedDocs.size > 0 && (
+                <button
+                  onClick={handleBulkDownload}
+                  disabled={downloading}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {downloading ? (
+                    <>
+                      <svg className="animate-spin -ml-0.5 mr-1.5 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Zipping...
+                    </>
+                  ) : (
+                    `Download ${selectedDocs.size} File${selectedDocs.size !== 1 ? 's' : ''}`
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
         {documents.length > 0 ? (
           <div className="space-y-2">
             {documents.map((doc: any) => (
               <div key={doc.id} className="flex justify-between items-center text-sm border-b border-gray-100 pb-2">
-                <div>
-                  <span className="font-medium text-gray-900">
-                    {DOCUMENT_TYPES[doc.document_type as DocumentType] || doc.document_type}
-                  </span>
-                  <span className="text-gray-500 ml-2">{doc.file_name}</span>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedDocs.has(doc.id)}
+                    onChange={() => toggleDocSelect(doc.id)}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <div>
+                    <span className="font-medium text-gray-900">
+                      {DOCUMENT_TYPES[doc.document_type as DocumentType] || doc.document_type}
+                    </span>
+                    <span className="text-gray-500 ml-2">{doc.file_name}</span>
+                  </div>
                 </div>
                 <button onClick={() => handleDownload(doc)} className="text-blue-600 hover:text-blue-700">
                   Download

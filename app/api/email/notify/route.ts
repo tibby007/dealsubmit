@@ -5,6 +5,7 @@ import {
   emailStatusChanged,
   emailNewMessage,
   emailDocsRequested,
+  emailDocumentUploaded,
 } from '@/lib/email'
 import { DEAL_TYPES, DEAL_STATUSES, DOCUMENT_TYPES } from '@/lib/constants'
 import type { DealType, DealStatus, DocumentType } from '@/lib/constants'
@@ -151,6 +152,40 @@ export async function POST(request: NextRequest) {
           ),
           note,
         })
+      }
+    } else if (type === 'document_uploaded') {
+      const { dealId, documentTypes } = body
+      const { data: deal } = await supabase
+        .from('deals')
+        .select('legal_business_name, broker_id')
+        .eq('id', dealId)
+        .single()
+      if (!deal) return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
+
+      const { data: broker } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', deal.broker_id)
+        .single()
+
+      const { data: admins } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('role', 'admin')
+
+      if (admins) {
+        const typeLabels = documentTypes.map(
+          (dt: string) => DOCUMENT_TYPES[dt as DocumentType] || dt
+        )
+        for (const admin of admins) {
+          await emailDocumentUploaded({
+            adminEmail: admin.email,
+            businessName: deal.legal_business_name,
+            brokerName: broker?.full_name || 'Unknown',
+            documentTypes: typeLabels,
+            dealId,
+          })
+        }
       }
     }
 

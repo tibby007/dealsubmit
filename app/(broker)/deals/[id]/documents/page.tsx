@@ -70,6 +70,21 @@ export default function DocumentsPage() {
       })
     }
 
+    // Notify admin about uploaded documents
+    try {
+      await fetch('/api/email/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'document_uploaded',
+          dealId: id,
+          documentTypes: [selectedType],
+        }),
+      })
+    } catch (notifyError) {
+      console.error('Failed to send upload notification:', notifyError)
+    }
+
     e.target.value = ''
     setUploading(false)
     loadDocuments()

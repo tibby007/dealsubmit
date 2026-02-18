@@ -109,6 +109,39 @@ export function emailNewMessage({
   })
 }
 
+export function emailDocumentUploaded({
+  adminEmail,
+  businessName,
+  brokerName,
+  documentTypes,
+  dealId,
+}: {
+  adminEmail: string
+  businessName: string
+  brokerName: string
+  documentTypes: string[]
+  dealId: string
+}) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  return sendEmail({
+    to: adminEmail,
+    subject: `Documents Uploaded: ${businessName}`,
+    html: `
+      <h2>New Documents Uploaded</h2>
+      <p><strong>${brokerName}</strong> uploaded documents for <strong>${businessName}</strong>:</p>
+      <ul>
+        ${documentTypes.map((dt) => `<li>${dt}</li>`).join('')}
+      </ul>
+      <p style="margin-top: 24px;">
+        <a href="${siteUrl}/admin/deals/${dealId}"
+           style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+          View Deal
+        </a>
+      </p>
+    `,
+  })
+}
+
 export function emailDocsRequested({
   brokerEmail,
   businessName,
