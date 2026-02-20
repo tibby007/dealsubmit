@@ -307,6 +307,66 @@ export default function AdminDealDetailPage() {
         </div>
       </div>
 
+      {/* Lender Recommendation (Juan Agent) */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-lg font-medium text-gray-900">Lender Recommendation</h3>
+          {deal.lender_fit_score !== null && deal.lender_fit_score !== undefined && (
+            <div className="flex items-center gap-2">
+              <div className={`text-2xl font-bold ${
+                deal.lender_fit_score >= 80 ? 'text-green-600' :
+                deal.lender_fit_score >= 60 ? 'text-yellow-600' :
+                'text-red-600'
+              }`}>
+                {deal.lender_fit_score}
+              </div>
+              <span className="text-sm text-gray-500">Fit Score</span>
+            </div>
+          )}
+        </div>
+        
+        {deal.recommended_lender ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">🏦</span>
+              <div>
+                <p className="text-xl font-semibold text-gray-900">{deal.recommended_lender}</p>
+                <p className="text-sm text-gray-500">Recommended by Juan AI</p>
+              </div>
+            </div>
+            {deal.lender_notes && (
+              <div className="bg-gray-50 rounded-lg p-3 mt-3">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{deal.lender_notes}</p>
+              </div>
+            )}
+            {/* Score breakdown bar */}
+            {deal.lender_fit_score !== null && deal.lender_fit_score !== undefined && (
+              <div className="mt-4">
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full ${
+                      deal.lender_fit_score >= 80 ? 'bg-green-500' :
+                      deal.lender_fit_score >= 60 ? 'bg-yellow-500' :
+                      'bg-red-500'
+                    }`}
+                    style={{ width: `${deal.lender_fit_score}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>Poor Fit</span>
+                  <span>Strong Fit</span>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-6 text-gray-500">
+            <p className="text-sm">No lender recommendation yet</p>
+            <p className="text-xs mt-1">Juan AI will analyze and recommend a lender automatically</p>
+          </div>
+        )}
+      </div>
+
       {/* Broker Info */}
       {broker && (
         <div className="bg-white shadow rounded-lg p-6">
